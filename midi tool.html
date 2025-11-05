@@ -1,0 +1,1710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Retro Neon Step Sequencer</title>
+<style>
+  /* === RETRO NEON THEME === */
+  :root {
+    /* Retro Color Palette */
+    --bg-dark: #1a1a2e;
+    --bg-medium: #2d2d44;
+    --bg-light: #3c3c5c;
+    --neon-pink: #ff6b6b;
+    --neon-cyan: #5cc7ff;
+    --neon-green: #7bd389;
+    --neon-yellow: #ffd166;
+    --neon-purple: #c74ded;
+    --text-primary: #e0e0ff;
+    --text-muted: #9aa3ab;
+    --crt-glow: rgba(123, 211, 137, 0.1);
+    --scanline: rgba(0, 0, 0, 0.3);
+  }
+
+  /* CRT Screen Effect */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      linear-gradient(var(--scanline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--scanline) 1px, transparent 1px);
+    background-size: 4px 4px;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.15;
+    mix-blend-mode: overlay;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 0%,
+      var(--crt-glow) 70%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  body {
+    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 50%, var(--bg-dark) 100%);
+    color: var(--text-primary);
+    font-family: 'Courier New', 'VT323', monospace;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  /* Retro App Container */
+  .app {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 20px;
+    background: rgba(26, 26, 46, 0.8);
+    border: 3px solid var(--bg-light);
+    border-radius: 8px;
+    box-shadow: 
+      0 0 30px rgba(255, 107, 107, 0.2),
+      inset 0 0 30px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 10;
+  }
+
+  .app::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+      var(--neon-pink), 
+      var(--neon-cyan), 
+      var(--neon-green), 
+      var(--neon-purple));
+    border-radius: 10px;
+    z-index: -1;
+    opacity: 0.3;
+    filter: blur(10px);
+  }
+
+  /* === RETRO HEADER === */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 2px solid var(--bg-light);
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  header::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      var(--neon-pink) 50%, 
+      transparent 100%);
+  }
+
+  h1 {
+    font-size: 24px;
+    margin: 0;
+    background: linear-gradient(45deg, var(--neon-pink), var(--neon-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--neon-yellow);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  /* === NEON BUTTONS === */
+  button, .btn-neon {
+    background: transparent;
+    border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px var(--neon-cyan);
+    box-shadow: 
+      inset 0 0 10px var(--neon-cyan),
+      0 0 10px var(--neon-cyan);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  button::before, .btn-neon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    transition: left 0.5s ease;
+  }
+
+  button:hover::before, .btn-neon:hover::before {
+    left: 100%;
+  }
+
+  button:hover, .btn-neon:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 
+      0 0 20px var(--neon-cyan),
+      0 0 40px var(--neon-cyan);
+    text-shadow: none;
+  }
+
+  /* === COLLAPSIBLE SECTIONS === */
+  .collapsible {
+    margin-bottom: 10px;
+  }
+
+  .collapsible-header {
+    background: linear-gradient(180deg, var(--bg-medium) 0%, var(--bg-dark) 100%);
+    border: 3px solid var(--bg-light);
+    border-radius: 8px;
+    padding: 12px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .collapsible-header:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(92, 199, 255, 0.3);
+  }
+
+  .collapsible-header.active {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-color: var(--neon-pink);
+  }
+
+  .collapsible-content {
+    background: rgba(45, 45, 68, 0.8);
+    border: 3px solid var(--bg-light);
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .collapsible-content.active {
+    padding: 15px;
+    max-height: 500px;
+  }
+
+  .collapse-icon {
+    transition: transform 0.3s ease;
+    color: var(--neon-cyan);
+    font-size: 16px;
+  }
+
+  .collapsible-header.active .collapse-icon {
+    transform: rotate(180deg);
+    color: var(--neon-pink);
+  }
+
+  /* === RETRO CONTROLS === */
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  select, input[type="number"], input[type="range"] {
+    background: linear-gradient(180deg, var(--bg-medium), var(--bg-dark));
+    border: 2px solid var(--bg-light);
+    border-bottom: 3px solid #000;
+    border-right: 3px solid #000;
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 6px;
+    background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+    border-radius: 3px;
+    border: 1px solid #000;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(180deg, #fff, #ccc);
+    border: 2px solid #000;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+
+  /* === RETRO CONTROL PANELS === */
+  .control-panel {
+    background: linear-gradient(180deg, var(--bg-medium) 0%, var(--bg-dark) 100%);
+    border: 3px solid var(--bg-light);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 3px solid #000;
+    border-right: 3px solid #000;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+  }
+
+  .control-panel::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .panel-label {
+    background: var(--neon-purple);
+    color: #000;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+
+  /* === ANIMATED LEDS === */
+  .led {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 4px;
+    position: relative;
+    background: #333;
+    border: 1px solid #000;
+  }
+
+  .led::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .led-green { background: #44ff44; box-shadow: 0 0 10px #44ff44; }
+  .led-red { background: #ff4444; box-shadow: 0 0 10px #ff4444; }
+  .led-blue { background: #4444ff; box-shadow: 0 0 10px #4444ff; }
+  .led-cyan { background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+
+  .led-blink {
+    animation: led-blink 1s infinite;
+  }
+
+  .led-pulse {
+    animation: led-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes led-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+  }
+
+  @keyframes led-pulse {
+    0%, 100% { 
+      opacity: 0.3;
+      box-shadow: 0 0 5px currentColor;
+    }
+    50% { 
+      opacity: 1;
+      box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    }
+  }
+
+  /* === STEP SEQUENCER GRID === */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .pad-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    background: rgba(45, 45, 68, 0.5);
+    border: 1px solid var(--bg-light);
+    border-radius: 6px;
+  }
+
+  .pad-meta {
+    width: 120px;
+    min-width: 120px;
+    background: linear-gradient(180deg, var(--bg-medium), var(--bg-dark));
+    padding: 8px;
+    border-radius: 4px;
+    border: 2px solid var(--bg-light);
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .pad-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: var(--neon-cyan);
+    font-size: 12px;
+  }
+
+  .steps {
+    display: grid;
+    gap: 2px;
+    flex: 1;
+    overflow-x: auto;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--bg-light);
+    border-radius: 4px;
+  }
+
+  .step {
+    aspect-ratio: 1/1;
+    border-radius: 2px;
+    background: linear-gradient(135deg, var(--bg-medium), var(--bg-dark));
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    position: relative;
+    font-size: 8px;
+    min-width: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step:hover {
+    background: linear-gradient(135deg, var(--bg-light), var(--bg-medium));
+    transform: scale(1.1);
+    z-index: 2;
+  }
+
+  .step.active {
+    background: linear-gradient(135deg, var(--neon-pink), #ff8e8e);
+    border-color: var(--neon-pink);
+    box-shadow: 
+      0 0 8px var(--neon-pink),
+      inset 0 0 4px rgba(255,255,255,0.5);
+    animation: pulse 1s infinite alternate;
+  }
+
+  .step.current {
+    box-shadow: 
+      inset 0 0 0 2px var(--neon-yellow),
+      0 0 10px var(--neon-yellow);
+    background: linear-gradient(135deg, var(--neon-yellow), #ffd166);
+    border-color: var(--neon-yellow);
+  }
+
+  @keyframes pulse {
+    from { opacity: 1; }
+    to { opacity: 0.8; }
+  }
+
+  .chiptune-mode .step.active {
+    background: linear-gradient(135deg, var(--neon-pink), #ffa726);
+    box-shadow: 0 0 8px var(--neon-pink);
+  }
+
+  /* === RETRO TOGGLE SWITCH === */
+  .chiptune-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--bg-light);
+  }
+
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    background: var(--bg-medium);
+    border: 2px solid var(--bg-light);
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--neon-cyan);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px var(--neon-cyan);
+  }
+
+  .toggle-input:checked + .toggle-slider {
+    transform: translateX(26px);
+    background: var(--neon-pink);
+    box-shadow: 0 0 10px var(--neon-pink);
+  }
+
+  .toggle-input:checked ~ .toggle-switch {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: var(--neon-pink);
+  }
+
+  .toggle-input {
+    display: none;
+  }
+
+  /* === STATUS AND FOOTER === */
+  .status {
+    margin-left: auto;
+    color: var(--neon-green);
+    font-size: 13px;
+    text-shadow: 0 0 5px var(--neon-green);
+  }
+
+  .footer {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--bg-light);
+  }
+
+  .small {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* === UTILITY CLASSES === */
+  .generator, .midi-options, .chiptune-controls {
+    background: rgba(255,255,255,0.05);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    border: 1px solid var(--bg-light);
+  }
+
+  .chiptune-controls {
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.3);
+  }
+
+  label.inline {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--neon-cyan);
+  }
+
+  .pattern-length-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  /* === RESPONSIVE DESIGN === */
+  @media (max-width: 768px) {
+    .controls {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+    
+    .pattern-length-selector {
+      margin-left: 0;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Retro Neon Header -->
+  <header>
+    <div>
+      <h1>RETRO NEON STEP SEQUENCER</h1>
+      <div class="header-subtitle">
+        <span class="led led-green led-blink"></span>
+        8 PADS × 64 STEPS • PRESETS • CHIPTUNE MODE
+        <span class="led led-blue led-pulse"></span>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="play">
+        <span class="led led-green led-blink"></span>
+        ▶ PLAY PATTERN
+      </button>
+      <button id="stop">
+        <span class="led led-red"></span>
+        ■ STOP
+      </button>
+      <label class="inline">BPM <input type="number" id="bpm" value="150" min="40" max="300" style="width:60px"/></label>
+      <label class="inline">SWING <input type="range" id="swing" min="0" max="60" value="0"/></label>
+      <div class="pattern-length-selector">
+        <label class="inline">PATTERN LENGTH:</label>
+        <select id="patternLength">
+          <option value="16">16 STEPS</option>
+          <option value="32">32 STEPS</option>
+          <option value="64" selected>64 STEPS</option>
+        </select>
+      </div>
+      <div class="chiptune-toggle">
+        <span class="inline">CHIPTUNE MODE</span>
+        <label class="toggle-switch">
+          <input type="checkbox" class="toggle-input" id="chiptuneMode" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <button id="exportMidi">⬇ EXPORT MIDI</button>
+    </div>
+  </header>
+
+  <!-- Collapsible Chiptune Controls -->
+  <div class="collapsible">
+    <div class="collapsible-header" id="chiptuneHeader">
+      <div class="panel-label">🎛️ CHIPTUNE ENGINE</div>
+      <span class="collapse-icon">▼</span>
+    </div>
+    <div class="collapsible-content" id="chiptuneContent">
+      <label class="inline">WAVE TYPE:
+        <select id="waveType">
+          <option value="square50">SQUARE 50%</option>
+          <option value="square25" selected>SQUARE 25% (NES)</option>
+          <option value="square12">SQUARE 12.5%</option>
+          <option value="sawtooth">SAWTOOTH</option>
+          <option value="triangle">TRIANGLE</option>
+          <option value="sine">SINE</option>
+        </select>
+      </label>
+      <label class="inline">BIT CRUSH: <input type="range" id="bitCrush" min="0" max="10" value="3"/></label>
+      <label class="inline">NOISE: <input type="range" id="noiseAmt" min="0" max="100" value="5"/></label>
+      <div class="small">AUTHENTIC NES/GAMEBOY SOUND EMULATION</div>
+    </div>
+  </div>
+
+  <!-- Collapsible MIDI Instrument -->
+  <div class="collapsible">
+    <div class="collapsible-header" id="midiHeader">
+      <div class="panel-label">🎵 MIDI INSTRUMENT</div>
+      <span class="collapse-icon">▼</span>
+    </div>
+    <div class="collapsible-content" id="midiContent">
+      <label class="inline">INSTRUMENT:
+        <select id="midiInstrument">
+          <option value="80">LEAD 1 (SQUARE)</option>
+          <option value="81">LEAD 2 (SAWTOOTH)</option>
+          <option value="82">LEAD 3 (CALLIOPE)</option>
+          <option value="83">LEAD 4 (CHIFF)</option>
+          <option value="87">LEAD 7 (FIFTHS)</option>
+          <option value="88">LEAD 8 (BASS+LEAD)</option>
+          <option value="96">PAD 1 (NEW AGE)</option>
+          <option value="97">PAD 2 (WARM)</option>
+          <option value="98">PAD 3 (POLYSYNTH)</option>
+          <option value="104">FX 1 (RAIN)</option>
+          <option value="113">FX 4 (ATMOSPHERE)</option>
+          <option value="118">SYNTH DRUM</option>
+          <option value="0">ACOUSTIC GRAND PIANO</option>
+          <option value="19">ROCK ORGAN</option>
+          <option value="25">ACOUSTIC GUITAR (NYLON)</option>
+          <option value="32">ACOUSTIC BASS</option>
+          <option value="40">VIOLIN</option>
+          <option value="46">HARP</option>
+          <option value="56">TRUMPET</option>
+          <option value="73">FLUTE</option>
+          <option value="115">WOODBLOCK</option>
+        </select>
+      </label>
+      <div class="small">SETS THE INSTRUMENT IN EXPORTED MIDI FILE</div>
+    </div>
+  </div>
+
+  <!-- Collapsible Pattern Generator -->
+  <div class="collapsible">
+    <div class="collapsible-header" id="generatorHeader">
+      <div class="panel-label">⚡ PATTERN GENERATOR</div>
+      <span class="collapse-icon">▼</span>
+    </div>
+    <div class="collapsible-content" id="generatorContent">
+      <label class="inline">PRESET
+        <select id="presetSelect">
+          <option value="Chiptune" selected>CHIPTUNE</option>
+          <option value="Ambient">AMBIENT</option>
+          <option value="House">HOUSE</option>
+          <option value="Techno">TECHNO</option>
+          <option value="DrumBass">DRUM & BASS</option>
+          <option value="HipHop">HIP HOP</option>
+          <option value="Synthwave">SYNTHWAVE</option>
+          <option value="Dubstep">DUBSTEP</option>
+          <option value="Trance">TRANCE</option>
+        </select>
+      </label>
+      <button id="applyPreset">APPLY PRESET</button>
+
+      <label class="inline">ALGORITHM
+        <select id="genAlgo">
+          <option value="random">RANDOM</option>
+          <option value="euclid">EUCLIDEAN</option>
+          <option value="markov">MARKOV</option>
+          <option value="arpeggio">ARPEGGIO</option>
+        </select>
+      </label>
+      <label class="inline">PAD
+        <select id="genPad"></select>
+      </label>
+      <label class="inline">DENSITY <input type="range" id="density" min="0" max="1" step="0.05" value="0.4"/></label>
+      <label class="inline">PULSES <input type="number" id="euclidPulses" min="1" max="64" value="5" style="width:50px"/></label>
+      <label class="inline">MUTATION <input type="range" id="mutateAmt" min="0" max="0.5" step="0.01" value="0.08"/></label>
+      <button id="generateBtn">GENERATE</button>
+      <button id="mutateBtn">MUTATE</button>
+      <button id="generateAll">🎶 GENERATE ALL PADS</button>
+      <label class="inline">SCALE
+        <select id="scaleSelect">
+          <option value="C_major" selected>C MAJOR</option>
+          <option value="A_minor">A MINOR</option>
+          <option value="C_penta">C PENTATONIC</option>
+          <option value="D_dorian">D DORIAN</option>
+        </select>
+      </label>
+      <label class="inline">OCTAVE <input type="number" id="rootOct" value="4" min="1" max="6" style="width:50px"></label>
+    </div>
+  </div>
+
+  <!-- Step Sequencer Grid -->
+  <div class="control-panel">
+    <div class="panel-label">🎹 STEP SEQUENCER</div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="small">TIP: CLICK HEADERS TO COLLAPSE/EXPAND SECTIONS • CURRENT STEP HIGHLIGHTED ACROSS ALL PADS</div>
+    <div class="status" id="status">
+      <span class="led led-cyan led-pulse"></span>
+      READY - CHIPTUNE MODE ACTIVE
+    </div>
+  </div>
+</div>
+
+<script>
+// ==== Collapsible Sections ====
+function initCollapsible() {
+  const sections = [
+    { header: 'chiptuneHeader', content: 'chiptuneContent' },
+    { header: 'midiHeader', content: 'midiContent' },
+    { header: 'generatorHeader', content: 'generatorContent' }
+  ];
+
+  sections.forEach(section => {
+    const header = document.getElementById(section.header);
+    const content = document.getElementById(section.content);
+
+    header.addEventListener('click', () => {
+      const isActive = content.classList.contains('active');
+      
+      // Close all sections first
+      sections.forEach(s => {
+        document.getElementById(s.header).classList.remove('active');
+        document.getElementById(s.content).classList.remove('active');
+      });
+
+      // Toggle current section
+      if (!isActive) {
+        header.classList.add('active');
+        content.classList.add('active');
+      }
+    });
+  });
+
+  // Start with first section open
+  document.getElementById('chiptuneHeader').classList.add('active');
+  document.getElementById('chiptuneContent').classList.add('active');
+}
+
+// ==== Core State ====
+const PADS = 8, MAX_STEPS = 64;
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const masterGain = ctx.createGain(); 
+masterGain.gain.value = 0.7; 
+masterGain.connect(ctx.destination);
+
+// Create noise buffer for authentic chiptune noise channel
+let noiseBuffer;
+function createNoiseBuffer() {
+  const bufferSize = ctx.sampleRate * 0.5; // 0.5 second of noise
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const output = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    output[i] = Math.random() * 2 - 1;
+  }
+  return buffer;
+}
+noiseBuffer = createNoiseBuffer();
+
+const state = {
+  bpm: 150,
+  swing: 0,
+  playing: false,
+  position: 0,
+  patternLength: 64,
+  pads: [],
+  chiptuneMode: true,
+  waveType: 'square25',
+  bitCrush: 3,
+  noiseAmt: 5
+};
+
+// ==== Scale Logic ====
+const scaleDefs = {
+  "C_major": {root: 60, intervals: [0, 2, 4, 5, 7, 9, 11]},
+  "A_minor": {root: 57, intervals: [0, 2, 3, 5, 7, 8, 10]},
+  "C_penta": {root: 60, intervals: [0, 2, 4, 7, 9]},
+  "D_dorian": {root: 62, intervals: [0, 2, 3, 5, 7, 9, 10]},
+};
+
+function buildScaleNotes(key, oct) {
+  const s = scaleDefs[key]; 
+  const base = oct * 12; 
+  const root = (s.root % 12) + base;
+  const notes = []; 
+  for (let o = 0; o < 2; o++) {
+    for (const iv of s.intervals) {
+      notes.push(root + iv + o * 12);
+    }
+  }
+  return notes;
+}
+
+function initPads(scale, oct) {
+  const notes = buildScaleNotes(scale, oct);
+  state.pads = []; 
+  for (let i = 0; i < PADS; i++) {
+    state.pads.push({
+      name: "PAD " + (i + 1),
+      note: notes[i % notes.length],
+      velocity: 100,
+      pattern: new Array(MAX_STEPS).fill(0),
+      stepNotes: new Array(MAX_STEPS).fill(null)
+    });
+  }
+}
+initPads("C_major", 4);
+
+// ==== UI ====
+const grid = document.getElementById("grid"), statusEl = document.getElementById("status");
+function setStatus(t) { 
+  statusEl.innerHTML = `<span class="led led-cyan led-pulse"></span> ${t}`;
+}
+
+function updateCurrentStep() {
+  const allSteps = document.querySelectorAll('.step');
+  allSteps.forEach(step => {
+    step.classList.remove('current');
+  });
+  
+  // Highlight current step across all pads
+  const currentStepIndex = state.position;
+  const padRows = document.querySelectorAll('.pad-row');
+  
+  padRows.forEach(row => {
+    const steps = row.querySelectorAll('.step');
+    if (steps[currentStepIndex]) {
+      steps[currentStepIndex].classList.add('current');
+    }
+  });
+}
+
+function buildGrid() {
+  grid.innerHTML = ""; 
+  for (let p = 0; p < PADS; p++) {
+    const pad = state.pads[p];
+    const row = document.createElement("div"); 
+    row.className = "pad-row";
+    
+    const meta = document.createElement("div"); 
+    meta.className = "pad-meta";
+    meta.innerHTML = `<div class="pad-name">${pad.name}</div><div class="small">NOTE: ${pad.note}</div>`;
+    row.appendChild(meta);
+    
+    const steps = document.createElement("div"); 
+    steps.className = "steps";
+    steps.style.gridTemplateColumns = `repeat(${state.patternLength}, 1fr)`;
+    
+    for (let s = 0; s < state.patternLength; s++) {
+      const st = document.createElement("div"); 
+      st.className = "step"; 
+      st.textContent = (s % 16 === 0) ? s + 1 : ""; // Only show numbers every 16 steps
+      if (pad.pattern[s]) st.classList.add('active');
+      st.onclick = () => {
+        pad.pattern[s] = pad.pattern[s] ? 0 : 1;
+        st.classList.toggle('active');
+      };
+      steps.appendChild(st);
+    }
+    row.appendChild(steps);
+    grid.appendChild(row);
+  }
+  
+  // Update visual theme based on chiptune mode
+  if (state.chiptuneMode) {
+    document.body.classList.add('chiptune-mode');
+  } else {
+    document.body.classList.remove('chiptune-mode');
+  }
+  
+  // Update current step highlighting
+  updateCurrentStep();
+}
+
+// ==== Pattern Length Control ====
+document.getElementById("patternLength").onchange = (e) => {
+  state.patternLength = parseInt(e.target.value);
+  // Update euclid pulses max value
+  document.getElementById("euclidPulses").max = state.patternLength;
+  buildGrid();
+  setStatus(`PATTERN LENGTH SET TO ${state.patternLength} STEPS`);
+};
+
+// ==== Enhanced Chiptune Synth ====
+function midiToHz(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+
+function createPulseWave(dutyCycle) {
+  const real = new Float32Array(256);
+  const imag = new Float32Array(256);
+  
+  for (let n = 1; n < 256; n++) {
+    const angle = n * Math.PI * dutyCycle;
+    real[n] = (2 / (n * Math.PI)) * Math.sin(angle);
+  }
+  
+  return ctx.createPeriodicWave(real, imag);
+}
+
+// Create pulse waves for different duty cycles
+const pulseWaves = {
+  'square50': createPulseWave(0.5),
+  'square25': createPulseWave(0.25),
+  'square12': createPulseWave(0.125)
+};
+
+function playSynth(note, vel, when, dur = 0.2) {
+  const freq = midiToHz(note);
+  
+  if (state.chiptuneMode) {
+    // Enhanced chiptune mode with authentic NES/GameBoy characteristics
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    
+    // Set wave type based on selection
+    switch(state.waveType) {
+      case 'square50':
+      case 'square25':
+      case 'square12':
+        o.setPeriodicWave(pulseWaves[state.waveType]);
+        break;
+      case 'sawtooth':
+        o.type = 'sawtooth';
+        break;
+      case 'triangle':
+        o.type = 'triangle';
+        break;
+      case 'sine':
+        o.type = 'sine';
+        break;
+      default:
+        o.type = 'square';
+    }
+    
+    // Apply bit crushing effect
+    let finalFreq = freq;
+    if (state.bitCrush > 0) {
+      const crushFactor = Math.pow(2, 10 - state.bitCrush);
+      finalFreq = Math.round(freq / crushFactor) * crushFactor;
+    }
+    
+    o.frequency.value = finalFreq;
+    
+    // Apply low-pass filter for authentic hardware sound
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 3000 + (state.bitCrush * 200); // Varies with bit crush
+    filter.Q.value = 0.5;
+    
+    // Connect nodes
+    o.connect(filter);
+    filter.connect(g);
+    g.connect(masterGain);
+    
+    // Add noise for authenticity
+    if (state.noiseAmt > 0 && note > 80 && Math.random() < (state.noiseAmt / 150)) {
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+      const noiseGain = ctx.createGain();
+      noise.connect(noiseGain);
+      noiseGain.connect(masterGain);
+      noiseGain.gain.value = (state.noiseAmt / 400) * (vel / 127);
+      noise.start(when);
+      noise.stop(when + dur * 0.5);
+    }
+    
+    // Chiptune-style envelope - quick attack, quick release
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0.001, when);
+    g.gain.linearRampToValueAtTime(vel/127 * 0.8, when + 0.002); // Very fast attack
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur * 0.7); // Quick release
+    
+    o.start(when);
+    o.stop(when + dur);
+    
+  } else {
+    // Regular mode
+    const o = ctx.createOscillator();
+    o.type = "sawtooth";
+    const g = ctx.createGain();
+    o.connect(g);
+    g.connect(masterGain);
+    
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.001, when);
+    g.gain.linearRampToValueAtTime(vel/127, when + 0.01);
+    g.gain.linearRampToValueAtTime(0.001, when + dur);
+    
+    o.start(when);
+    o.stop(when + dur + 0.05);
+  }
+}
+
+// ==== Chiptune Mode Toggle ====
+document.getElementById("chiptuneMode").onchange = (e) => {
+  state.chiptuneMode = e.target.checked;
+  buildGrid(); // Update visual theme
+  setStatus(`CHIPTUNE MODE ${state.chiptuneMode ? 'ON' : 'OFF'}`);
+};
+
+// ==== Chiptune Controls ====
+document.getElementById("waveType").onchange = (e) => {
+  state.waveType = e.target.value;
+  setStatus(`WAVE TYPE: ${e.target.selectedOptions[0].text.toUpperCase()}`);
+};
+
+document.getElementById("bitCrush").oninput = (e) => {
+  state.bitCrush = parseInt(e.target.value);
+};
+
+document.getElementById("noiseAmt").oninput = (e) => {
+  state.noiseAmt = parseInt(e.target.value);
+};
+
+let nextStep = 0, timer;
+function schedule() {
+  if (!state.playing) return;
+  const spb = 60 / state.bpm, stepDur = spb / 4;
+  while (nextStep < ctx.currentTime + 0.2) {
+    let swing = 0;
+    if (state.position % 2 === 1) swing = (state.swing / 100) * stepDur;
+    
+    for (let p = 0; p < PADS; p++) {
+      const pad = state.pads[p];
+      if (pad.pattern[state.position]) {
+        const note = pad.stepNotes[state.position] || pad.note;
+        playSynth(note, pad.velocity, nextStep + swing, stepDur * 0.9);
+      }
+    }
+    
+    // Update UI for current step
+    updateCurrentStep();
+    
+    state.position = (state.position + 1) % state.patternLength;
+    nextStep += stepDur;
+  }
+  timer = requestAnimationFrame(schedule);
+}
+
+// ==== Play/Stop ====
+document.getElementById("play").onclick = () => {
+  if (state.playing) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  state.playing = true;
+  nextStep = ctx.currentTime;
+  state.position = 0;
+  schedule();
+  setStatus(`PLAYING • ${state.bpm} BPM • ${state.chiptuneMode ? 'CHIPTUNE MODE' : 'STANDARD MODE'}`);
+};
+
+document.getElementById("stop").onclick = () => {
+  state.playing = false;
+  if (timer) cancelAnimationFrame(timer);
+  state.position = 0;
+  updateCurrentStep();
+  setStatus("STOPPED");
+};
+
+// ==== BPM & Swing ====
+document.getElementById("bpm").onchange = (e) => {
+  state.bpm = parseInt(e.target.value);
+  if (state.playing) setStatus(`BPM SET TO ${state.bpm}`);
+};
+document.getElementById("swing").oninput = (e) => {
+  state.swing = parseInt(e.target.value);
+};
+
+// ==== Pattern Generator ====
+function fillGenPadSelect() {
+  const sel = document.getElementById("genPad");
+  sel.innerHTML = "";
+  for (let i = 0; i < PADS; i++) {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = state.pads[i].name;
+    sel.appendChild(opt);
+  }
+}
+fillGenPadSelect();
+
+function generatePattern(algo, padIdx, density, pulses, mutateAmt) {
+  const pad = state.pads[padIdx];
+  const scale = document.getElementById("scaleSelect").value;
+  const oct = parseInt(document.getElementById("rootOct").value);
+  const notes = buildScaleNotes(scale, oct);
+  
+  switch (algo) {
+    case "random":
+      for (let i = 0; i < state.patternLength; i++) {
+        if (Math.random() < density) {
+          pad.pattern[i] = 1;
+          pad.stepNotes[i] = notes[Math.floor(Math.random() * notes.length)];
+        } else {
+          pad.pattern[i] = 0;
+        }
+      }
+      break;
+    case "euclid":
+      // Euclidean rhythm generation
+      const pattern = new Array(state.patternLength).fill(0);
+      for (let i = 0; i < pulses; i++) {
+        pattern[Math.floor(i * state.patternLength / pulses)] = 1;
+      }
+      pad.pattern = pattern;
+      // Assign notes from scale
+      for (let i = 0; i < state.patternLength; i++) {
+        if (pad.pattern[i]) {
+          pad.stepNotes[i] = notes[Math.floor(Math.random() * notes.length)];
+        }
+      }
+      break;
+    case "markov":
+      // Simple Markov chain
+      let current = Math.random() < 0.5 ? 0 : 1;
+      for (let i = 0; i < state.patternLength; i++) {
+        if (Math.random() < mutateAmt) current = 1 - current;
+        pad.pattern[i] = current;
+        if (current) {
+          pad.stepNotes[i] = notes[Math.floor(Math.random() * notes.length)];
+        }
+      }
+      break;
+    case "arpeggio":
+      // Arpeggio pattern
+      for (let i = 0; i < state.patternLength; i++) {
+        if (i % 4 === 0) {
+          pad.pattern[i] = 1;
+          pad.stepNotes[i] = notes[i % notes.length];
+        } else {
+          pad.pattern[i] = 0;
+        }
+      }
+      break;
+  }
+  buildGrid();
+}
+
+document.getElementById("generateBtn").onclick = () => {
+  const algo = document.getElementById("genAlgo").value;
+  const padIdx = parseInt(document.getElementById("genPad").value);
+  const density = parseFloat(document.getElementById("density").value);
+  const pulses = parseInt(document.getElementById("euclidPulses").value);
+  const mutateAmt = parseFloat(document.getElementById("mutateAmt").value);
+  generatePattern(algo, padIdx, density, pulses, mutateAmt);
+  setStatus(`GENERATED ${algo.toUpperCase()} PATTERN FOR ${state.pads[padIdx].name}`);
+};
+
+document.getElementById("mutateBtn").onclick = () => {
+  const padIdx = parseInt(document.getElementById("genPad").value);
+  const mutateAmt = parseFloat(document.getElementById("mutateAmt").value);
+  const pad = state.pads[padIdx];
+  
+  for (let i = 0; i < state.patternLength; i++) {
+    if (Math.random() < mutateAmt) {
+      pad.pattern[i] = 1 - pad.pattern[i];
+      if (pad.pattern[i]) {
+        const scale = document.getElementById("scaleSelect").value;
+        const oct = parseInt(document.getElementById("rootOct").value);
+        const notes = buildScaleNotes(scale, oct);
+        pad.stepNotes[i] = notes[Math.floor(Math.random() * notes.length)];
+      }
+    }
+  }
+  buildGrid();
+  setStatus(`MUTATED ${state.pads[padIdx].name} PATTERN`);
+};
+
+document.getElementById("generateAll").onclick = () => {
+  const algo = document.getElementById("genAlgo").value;
+  const density = parseFloat(document.getElementById("density").value);
+  const pulses = parseInt(document.getElementById("euclidPulses").value);
+  const mutateAmt = parseFloat(document.getElementById("mutateAmt").value);
+  
+  for (let i = 0; i < PADS; i++) {
+    generatePattern(algo, i, density, pulses, mutateAmt);
+  }
+  setStatus(`GENERATED ${algo.toUpperCase()} PATTERNS FOR ALL PADS`);
+};
+
+// ==== Enhanced Presets with Pattern Expansion ====
+function expandPattern(basePattern, targetLength) {
+  if (basePattern.length >= targetLength) {
+    return basePattern.slice(0, targetLength);
+  }
+  
+  const expanded = [];
+  const ratio = targetLength / basePattern.length;
+  
+  for (let i = 0; i < targetLength; i++) {
+    const sourceIndex = Math.floor(i / ratio);
+    expanded.push(basePattern[sourceIndex % basePattern.length]);
+  }
+  
+  return expanded;
+}
+
+// Function to generate proper step notes for each preset
+function generatePresetStepNotes(padIndex, patternLength, scale, octave) {
+  const notes = buildScaleNotes(scale, octave);
+  
+  // Different note generation strategies for each pad
+  switch(padIndex) {
+    case 0: // Bass - use root notes
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[0] + (i % 4 === 0 ? 0 : 0)
+      );
+    case 1: // Harmony - use 3rd and 5th
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[i % 2 === 0 ? 2 : 4]
+      );
+    case 2: // Melody - walk up scale
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[Math.min(notes.length - 1, Math.floor(i / 4) % notes.length)]
+      );
+    case 3: // Lead - use higher octave
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[i % 4] + 12
+      );
+    case 4: // Arp - arpeggio pattern
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[i % 3] + 12
+      );
+    case 5: // Chords - use chord tones
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[(i % 4) * 2 % notes.length]
+      );
+    case 6: // Pads - sustained notes
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[Math.floor(i / 8) % 3] + 7
+      );
+    case 7: // FX - random high notes
+      return Array(patternLength).fill(null).map((_, i) => 
+        notes[Math.floor(Math.random() * 3)] + 24
+      );
+    default:
+      return Array(patternLength).fill(null).map(() => notes[0]);
+  }
+}
+
+const presets = {
+  "Chiptune": {
+    chiptuneMode: true,
+    waveType: "square25",
+    bitCrush: 3,
+    noiseAmt: 5,
+    bpm: 160,
+    scale: "C_major",
+    octave: 4,
+    patterns: [
+      [1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
+    ]
+  },
+  "Ambient": {
+    chiptuneMode: false,
+    waveType: "sine",
+    bitCrush: 0,
+    noiseAmt: 0,
+    bpm: 90,
+    scale: "C_penta",
+    octave: 3,
+    patterns: [
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+      [0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+    ]
+  },
+  "House": {
+    chiptuneMode: false,
+    waveType: "sawtooth",
+    bitCrush: 0,
+    noiseAmt: 0,
+    bpm: 128,
+    scale: "A_minor",
+    octave: 3,
+    patterns: [
+      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
+    ]
+  },
+  "Techno": {
+    chiptuneMode: true,
+    waveType: "square12",
+    bitCrush: 5,
+    noiseAmt: 10,
+    bpm: 140,
+    scale: "D_dorian",
+    octave: 3,
+    patterns: [
+      [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1]
+    ]
+  },
+  "DrumBass": {
+    chiptuneMode: false,
+    waveType: "sawtooth",
+    bitCrush: 2,
+    noiseAmt: 8,
+    bpm: 174,
+    scale: "A_minor",
+    octave: 2,
+    patterns: [
+      [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0],
+      [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
+      [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0]
+    ]
+  },
+  "HipHop": {
+    chiptuneMode: false,
+    waveType: "sine",
+    bitCrush: 1,
+    noiseAmt: 3,
+    bpm: 95,
+    scale: "C_penta",
+    octave: 2,
+    patterns: [
+      [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0],
+      [0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0],
+      [1,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]
+    ]
+  },
+  "Synthwave": {
+    chiptuneMode: true,
+    waveType: "square50",
+    bitCrush: 0,
+    noiseAmt: 2,
+    bpm: 118,
+    scale: "C_major",
+    octave: 3,
+    patterns: [
+      [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+      [0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0],
+      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+    ]
+  },
+  "Dubstep": {
+    chiptuneMode: true,
+    waveType: "sawtooth",
+    bitCrush: 8,
+    noiseAmt: 15,
+    bpm: 140,
+    scale: "A_minor",
+    octave: 2,
+    patterns: [
+      [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],
+      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      [0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1]
+    ]
+  },
+  "Trance": {
+    chiptuneMode: false,
+    waveType: "sawtooth",
+    bitCrush: 0,
+    noiseAmt: 0,
+    bpm: 138,
+    scale: "C_major",
+    octave: 4,
+    patterns: [
+      [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+      [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
+      [0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+      [1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0],
+      [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+    ]
+  }
+};
+
+document.getElementById("applyPreset").onclick = () => {
+  const presetName = document.getElementById("presetSelect").value;
+  const preset = presets[presetName];
+  
+  // Apply settings
+  state.chiptuneMode = preset.chiptuneMode;
+  state.waveType = preset.waveType;
+  state.bitCrush = preset.bitCrush;
+  state.noiseAmt = preset.noiseAmt;
+  state.bpm = preset.bpm;
+  
+  // Update UI controls
+  document.getElementById("chiptuneMode").checked = state.chiptuneMode;
+  document.getElementById("waveType").value = state.waveType;
+  document.getElementById("bitCrush").value = state.bitCrush;
+  document.getElementById("noiseAmt").value = state.noiseAmt;
+  document.getElementById("bpm").value = state.bpm;
+  document.getElementById("scaleSelect").value = preset.scale;
+  document.getElementById("rootOct").value = preset.octave;
+  
+  // Reinitialize pads with the preset scale and octave
+  initPads(preset.scale, preset.octave);
+  
+  // Apply patterns AND step notes
+  for (let p = 0; p < PADS; p++) {
+    const pad = state.pads[p];
+    const basePattern = preset.patterns[p] || new Array(16).fill(0);
+    const expandedPattern = expandPattern(basePattern, state.patternLength);
+    
+    // Generate proper step notes for this pad
+    const stepNotes = generatePresetStepNotes(p, state.patternLength, preset.scale, preset.octave);
+    
+    for (let s = 0; s < state.patternLength; s++) {
+      pad.pattern[s] = expandedPattern[s] || 0;
+      // Only set step notes for active steps
+      if (pad.pattern[s]) {
+        pad.stepNotes[s] = stepNotes[s];
+      } else {
+        pad.stepNotes[s] = null;
+      }
+    }
+    
+    // Update the pad's base note as well
+    const notes = buildScaleNotes(preset.scale, preset.octave);
+    pad.note = notes[p % notes.length];
+  }
+  
+  buildGrid();
+  setStatus(`APPLIED ${presetName} PRESET - ${state.patternLength} STEPS`);
+};
+
+// ==== MIDI Export Functions ====
+function writeVarLen(v) {
+  let b = [];
+  b.unshift(v & 0x7f);
+  v >>= 7;
+  while (v) {
+    b.unshift((v & 0x7f) | 0x80);
+    v >>= 7;
+  }
+  return new Uint8Array(b);
+}
+
+function concat(arrs) {
+  let l = arrs.reduce((s, a) => s + a.length, 0);
+  let out = new Uint8Array(l);
+  let p = 0;
+  for (const a of arrs) {
+    out.set(a, p);
+    p += a.length;
+  }
+  return out;
+}
+
+function numBytes(n, b) {
+  const a = new Uint8Array(b);
+  for (let i = 0; i < b; i++) {
+    a[b - 1 - i] = n & 255;
+    n >>= 8;
+  }
+  return a;
+}
+
+function exportMIDI() {
+  const ppq = 480;
+  const bpm = Number(document.getElementById("bpm").value) || 150;
+  const tempo = Math.round(60000000 / bpm);
+  const instrument = parseInt(document.getElementById("midiInstrument").value);
+
+  const header = concat([
+    new Uint8Array([0x4d, 0x54, 0x68, 0x64]), // MThd
+    numBytes(6, 4), // header length
+    numBytes(1, 2), // format 1 (multiple tracks)
+    numBytes(2, 2), // 2 tracks
+    numBytes(ppq, 2) // division
+  ]);
+
+  const ticksPerStep = Math.round(ppq / 4);
+  const eventList = [];
+
+  // Track 0: Metadata track
+  const track0Events = [];
+  
+  // Tempo meta event
+  track0Events.push({
+    tick: 0,
+    data: concat([new Uint8Array([0xFF, 0x51, 0x03]), numBytes(tempo, 3)])
+  });
+  
+  // Time signature
+  track0Events.push({
+    tick: 0,
+    data: new Uint8Array([0xFF, 0x58, 0x04, 0x04, 0x02, 0x18, 0x08])
+  });
+  
+  // Track name
+  const trackName = "Retro Neon Sequencer Pattern";
+  track0Events.push({
+    tick: 0,
+    data: concat([
+      new Uint8Array([0xFF, 0x03]),
+      writeVarLen(trackName.length),
+      new Uint8Array([...trackName].map(c => c.charCodeAt(0)))
+    ])
+  });
+  
+  // End of track 0
+  track0Events.push({
+    tick: 0,
+    data: new Uint8Array([0xFF, 0x2F, 0x00])
+  });
+
+  // Track 1: Note data
+  for (let step = 0; step < state.patternLength; step++) {
+    const baseTick = step * ticksPerStep;
+    let swingShift = 0;
+    if (step % 2 === 1 && Number(document.getElementById("swing").value) > 0) {
+      swingShift = Math.round((Number(document.getElementById("swing").value) / 100) * ticksPerStep);
+    }
+    const tick = baseTick + swingShift;
+    
+    for (let p = 0; p < PADS; p++) {
+      const pad = state.pads[p];
+      if (pad.pattern[step]) {
+        const note = pad.stepNotes[step] || pad.note;
+        const vel = Math.max(1, Math.min(127, Math.round(pad.velocity || 100)));
+        
+        // Note on
+        eventList.push({
+          tick: tick,
+          data: new Uint8Array([0x90, note & 0x7F, vel])
+        });
+        
+        // Note off after one step (90% duration)
+        const noteOffTick = tick + Math.round(ticksPerStep * 0.9);
+        eventList.push({
+          tick: noteOffTick,
+          data: new Uint8Array([0x80, note & 0x7F, 0x40])
+        });
+      }
+    }
+  }
+
+  // Sort events by tick
+  eventList.sort((a, b) => a.tick - b.tick);
+
+  // Build track 0
+  const track0Parts = [];
+  let lastTick0 = 0;
+  for (const ev of track0Events) {
+    const delta = ev.tick - lastTick0;
+    track0Parts.push(writeVarLen(delta));
+    track0Parts.push(ev.data);
+    lastTick0 = ev.tick;
+  }
+  const track0Data = concat(track0Parts);
+  const track0Chunk = concat([
+    new Uint8Array([0x4d, 0x54, 0x72, 0x6b]), // MTrk
+    numBytes(track0Data.length, 4),
+    track0Data
+  ]);
+
+  // Build track 1 with instrument program change
+  const track1Parts = [];
+  
+  // Add instrument program change at the beginning
+  track1Parts.push(writeVarLen(0)); // delta time 0
+  track1Parts.push(new Uint8Array([0xC0, instrument & 0x7F])); // Program change
+  
+  let lastTick1 = 0;
+  for (const ev of eventList) {
+    const delta = ev.tick - lastTick1;
+    track1Parts.push(writeVarLen(delta));
+    track1Parts.push(ev.data);
+    lastTick1 = ev.tick;
+  }
+  
+  // End of track 1
+  track1Parts.push(concat([writeVarLen(0), new Uint8Array([0xFF, 0x2F, 0x00])]));
+  const track1Data = concat(track1Parts);
+  const track1Chunk = concat([
+    new Uint8Array([0x4d, 0x54, 0x72, 0x6b]), // MTrk
+    numBytes(track1Data.length, 4),
+    track1Data
+  ]);
+
+  return concat([header, track0Chunk, track1Chunk]);
+}
+
+document.getElementById("exportMidi").onclick = () => {
+  const midiBytes = exportMIDI();
+  const blob = new Blob([midiBytes], {type: 'audio/midi'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; 
+  a.download = `retro-neon-${state.patternLength}steps-${state.bpm}bpm.mid`;
+  document.body.appendChild(a); 
+  a.click(); 
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  setStatus(`RETRO NEON PATTERN MIDI EXPORTED!`);
+};
+
+// ==== Scale and Octave ====
+document.getElementById("scaleSelect").onchange = (e) => {
+  const oct = parseInt(document.getElementById("rootOct").value);
+  initPads(e.target.value, oct);
+  buildGrid();
+  setStatus(`SCALE: ${e.target.selectedOptions[0].text.toUpperCase()}`);
+};
+
+document.getElementById("rootOct").onchange = (e) => {
+  const scale = document.getElementById("scaleSelect").value;
+  initPads(scale, parseInt(e.target.value));
+  buildGrid();
+  setStatus(`OCTAVE: ${e.target.value}`);
+};
+
+// ==== Initialize ====
+initCollapsible();
+buildGrid();
+setStatus("READY - CLICK PLAY TO START");
+</script>
+</body>
+</html>
